@@ -4,8 +4,8 @@ import os
 
 
 def thread_function(input_host, input_port):
-	os.system('echo host: ' + input_host + ' port: ' + input_host)
-
+	#os.system('echo host: ' + input_host + ' port: ' + input_host)
+        os.system(./server -n 50 -w . -p port)
 
 if __name__ == '__main__':
 
