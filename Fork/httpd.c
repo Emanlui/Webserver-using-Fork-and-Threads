@@ -19,6 +19,8 @@ static void error(char *);
 static void start_server(const char *);
 static void respond(int);
 
+int max_limit_of_clients;
+
 static int clientfd;
 
 static char *buf;
@@ -71,17 +73,23 @@ void serve_forever(const char *PORT, int max_connections) {
       if (fork() == 0) {
         close(listenfd);
         respond(slot);
+        max_limit_of_clients++;
+        //printf("MAX LIMIT: %d\n", max_limit_of_clients);
         close(clients[slot]);
+        max_limit_of_clients--;
         exit(0);
       } else close(clients[slot]);
       
     }
 
     while (clients[slot] != -1){
-      // printf("%d\n", slot);
+      //printf("%d\n", slot);
       slot = (slot + 1) % max_connections;
-      // printf("%d\n", slot);
+      //printf("%d\n", slot);
+      //printf("MAX LIMIT: %d\n", max_limit_of_clients);
+
     }
+
   }
 
 }
@@ -125,7 +133,7 @@ void start_server(const char *port) {
 
     // int socket(int domain, int type, int protocol);
     listenfd = socket(p->ai_family, p->ai_socktype, 0);
-    printf("SOCKET %d\n", listenfd);
+    // printf("SOCKET %d\n", listenfd);
     // int setsockopt(int sockfd, int level, int optname,const void *optval, socklen_t optlen);
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
     if (listenfd == -1)
@@ -172,6 +180,8 @@ void start_server(const char *port) {
 // get request header by name
 char *request_header(const char *name) {
   header_t *h = reqhdr;
+  //printf("HEADER: %s \n", h->name);
+  //printf("HEADER: %s \n", h->value);
   while (h->name) {
     if (strcmp(h->name, name) == 0)
       return h->value;
@@ -183,6 +193,37 @@ char *request_header(const char *name) {
 // get all request headers
 header_t *request_headers(void) { return reqhdr; }
 
+
+// This function is needed for my homework....
+// This function is needed for my homework....
+void print_protocol(char* method, char* uri ){
+
+  if(!strcmp(input_protocol,"8080")){
+    printf("It seems that you are using http \n");    
+    fprintf(stderr, "\x1b[32m + [%s] %s\x1b[0m\n", method, uri);
+  }else if(!strcmp(input_protocol,"21")){
+    printf("It seems that you are using ftp \n");    
+    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+  }else if(!strcmp(input_protocol,"22")){
+    printf("It seems that you are using ssh \n");    
+    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+  }else if(!strcmp(input_protocol,"25") || !strcmp(input_protocol,"587") || !strcmp(input_protocol,"465")){
+    printf("It seems that you are using smtp \n");    
+    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+  } else if(!strcmp(input_protocol,"53")){
+    printf("It seems that you are using dns \n");    
+    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+  } else if(!strcmp(input_protocol,"23")){
+    printf("It seems that you are using telnet \n");    
+    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+  } else if(!strcmp(input_protocol,"123")){
+    printf("It seems that you are using sntp \n");    
+    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+  }
+
+  else printf("Unrecognized port: %s \n", input_protocol);
+
+}
 
 // client connection
 void respond(int n) {
@@ -213,14 +254,23 @@ void respond(int n) {
 
     buf[rcvd] = '\0';
 
+    //printf("BUFFER: %s \n", buf);
+    //printf("--------");
+
     // char *strtok(char *str, const char *delim)
     method = strtok(buf, " \t\r\n");
     uri = strtok(NULL, " \t");
     
+    char* tmp;
 
-    printf("METHOD: %s \n",method);
-    printf("URI: %s \n",uri);
-    fprintf(stderr, "\x1b[32m + [%s] %s\x1b[0m\n", method, uri);
+    // get the body
+    while(tmp = strtok(NULL, " \n")) body = tmp;
+  
+
+    // printf("METHOD: %s \n",method);
+    // printf("URI: %s \n",uri);
+    print_protocol(method, uri);
+    
 
     // char *strchr(const char *str, int c)
     // This returns a pointer to the first occurrence of the character c in the string str, or NULL if the character is not found.

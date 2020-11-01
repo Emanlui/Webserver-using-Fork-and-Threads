@@ -10,14 +10,15 @@ void serve_forever(const char *PORT, int CONECTIONS);
 
 // Client request
 
-char *method, // "GET" or "POST"
+char *method, // "GET" or "POST" or ...
     *uri,     // "/index.html" things before '?'
     *qs,      // "a=1&b=2"     things after  '?'
-    *prot;    // "HTTP/1.1"
-
+    *prot,    // "HTTP/1.1"
+    *body;
 char *payload; // for POST
 int payload_size;
-char* directory_location;
+char *directory_location;
+char *input_protocol;
 
 char *request_header(const char *name);
 
