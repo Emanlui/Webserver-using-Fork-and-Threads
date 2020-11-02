@@ -8,7 +8,7 @@ def download_file(url):
 
     response = requests.get(url, stream=True)
 
-    with open("pythonPhoto.jpg", "wb") as handle:
+    with open("download_file", "wb") as handle:
         for data in tqdm(response.iter_content()):
             handle.write(data)
 

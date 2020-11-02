@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 	// File pointer
 	FILE *fp;
 
-	fp = fopen("DownloadedFile.jpg", "wb");
+	fp = fopen("DownloadedFile", "wb");
 
 	 /* init the curl session */ 
   	curl_handle = curl_easy_init();
@@ -46,10 +46,9 @@ int main(int argc, char **argv)
 
   	int result = curl_easy_perform(curl_handle);
 	 
-
-  	printf("%d", result);
-  	if(result == CURLE_OK) printf("The file was succesfullly downloaded");
-  	else printf("Error downloading the file %s", curl_easy_strerror(result));
+    printf("%d\n", result);
+  	if(result== CURLE_OK) printf("The file was succesfullly downloaded \n");
+  	else printf("Error downloading the file %s \n", curl_easy_strerror(result));
 
 
     fclose(fp);

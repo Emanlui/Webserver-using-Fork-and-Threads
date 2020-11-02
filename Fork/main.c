@@ -26,9 +26,14 @@ int main(int c, char **argv) {
 void route() {
   ROUTE_START()
 
+  ROUTE_GET("/get/dog.jpg") {
+    printf("HTTP/1.1 200 OK\r\n\r\n");
+    printf("Hello! You are using %s \n", request_header("User-Agent"));
+  }
+  
   ROUTE_GET("/") {
     printf("HTTP/1.1 200 OK\r\n\r\n");
-    printf("Hello! You are using %s", request_header("User-Agent"));
+    printf("Hello! You are using %s \n", request_header("User-Agent"));
   }
 
   ROUTE_POST("/") {

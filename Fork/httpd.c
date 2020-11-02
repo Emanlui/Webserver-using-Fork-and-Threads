@@ -25,6 +25,16 @@ static int clientfd;
 
 static char *buf;
 
+char webpage[] =
+
+  "HTTP/1.1 200 OK\r\n"
+  "Content-Type: text/html; charset=UTF-8\r\n\r\n"
+  "<!DOCTYPE html>\r\n"
+  "<html><head><title> Welcome to my server </title>\r\n"
+  "<body><center><h1> This server was made with C </h1><br>\r\n"
+  "<img src=\"dog.jpg\"></center></body/</html>\r\n";
+
+
 void serve_forever(const char *PORT, int max_connections) {
 
   // Socket and client struct
@@ -32,6 +42,7 @@ void serve_forever(const char *PORT, int max_connections) {
   socklen_t addrlen;
 
   int slot = 0;
+  int fdimg;
 
   printf("Server started %shttp://127.0.0.1:%s%s\n", "\033[92m", PORT,
          "\033[0m");
@@ -54,11 +65,8 @@ void serve_forever(const char *PORT, int max_connections) {
     addrlen = sizeof(clientaddr);
 
     /**
-
     int accept(int socket, struct sockaddr *restrict address,socklen_t *restrict address_len);
-
     The accept() function shall extract the first connection on the queue of pending connections, create a new socket with the same socket type protocol and address family as the specified socket, and allocate a new file descriptor for that socket.
-
     socket       : Specifies a socket that was created with socket(), has been bound to an address with bind(), and has issued a successful call to listen().
     address      : Either a null pointer, or a pointer to a sockaddr structure where the address of the connecting socket shall be returned.
     address_len  : Points to a socklen_t structure which on input specifies the length of the supplied sockaddr structure, and on output specifies the length of the stor
@@ -73,10 +81,19 @@ void serve_forever(const char *PORT, int max_connections) {
       if (fork() == 0) {
         close(listenfd);
         respond(slot);
-        max_limit_of_clients++;
+        //max_limit_of_clients++;
         //printf("MAX LIMIT: %d\n", max_limit_of_clients);
+        
+        //max_limit_of_clients--;
+
+      
+        //fdimg = open("/home/kali/Desktop/progra/data/bird.jpg", O_RDONLY);
+        //sendfile(clients[slot], fdimg, NULL, 4000);
+
+
+
+        close(fdimg);
         close(clients[slot]);
-        max_limit_of_clients--;
         exit(0);
       } else close(clients[slot]);
       
@@ -93,6 +110,8 @@ void serve_forever(const char *PORT, int max_connections) {
   }
 
 }
+
+
 
 // start server
 void start_server(const char *port) {
@@ -159,17 +178,14 @@ void start_server(const char *port) {
     listen() marks the socket referred to by sockfd as a passive socket,
     that is, as a socket that will be used to accept incoming connection
     requests using accept(2).
-
     The sockfd argument is a file descriptor that refers to a socket of
     type SOCK_STREAM or SOCK_SEQPACKET.
-
     The backlog argument defines the maximum length to which the queue of
     pending connections for sockfd may grow.  If a connection request
     arrives when the queue is full, the client may receive an error with
     an indication of ECONNREFUSED or, if the underlying protocol supports
     retransmission, the request may be ignored so that a later reattempt
     at connection succeeds.
-
   */
   if (listen(listenfd, 1000000) != 0) {
     perror("listen() error");
@@ -198,7 +214,7 @@ header_t *request_headers(void) { return reqhdr; }
 // This function is needed for my homework....
 void print_protocol(char* method, char* uri ){
 
-  if(!strcmp(input_protocol,"8080")){
+  if(!strcmp(input_protocol,"8080") || !strcmp(input_protocol,"80")){
     printf("It seems that you are using http \n");    
     fprintf(stderr, "\x1b[32m + [%s] %s\x1b[0m\n", method, uri);
   }else if(!strcmp(input_protocol,"21")){
@@ -225,6 +241,7 @@ void print_protocol(char* method, char* uri ){
 
 }
 
+
 // client connection
 void respond(int n) {
   int rcvd, fd, bytes_read;
@@ -239,7 +256,6 @@ void respond(int n) {
        connectionless and connection-oriented sockets.  This page first
        describes common features of all three system calls, and then
        describes the differences between the calls.
-
        Return a ssize_t 
   */
 
@@ -254,76 +270,110 @@ void respond(int n) {
 
     buf[rcvd] = '\0';
 
-    //printf("BUFFER: %s \n", buf);
-    //printf("--------");
+    int fdimg = 0;
 
-    // char *strtok(char *str, const char *delim)
-    method = strtok(buf, " \t\r\n");
-    uri = strtok(NULL, " \t");
-    
-    char* tmp;
+      // char *strtok(char *str, const char *delim)
+      method = strtok(buf, " \t\r\n");
+      uri = strtok(NULL, " \t");
 
-    // get the body
-    while(tmp = strtok(NULL, " \n")) body = tmp;
-  
+      //printf("URI: %s \n", uri);
+      print_protocol(method, uri);
 
-    // printf("METHOD: %s \n",method);
-    // printf("URI: %s \n",uri);
-    print_protocol(method, uri);
-    
+      // EQUALS
+    if(!strcmp(uri,"/get/dog.jpg")){
 
-    // char *strchr(const char *str, int c)
-    // This returns a pointer to the first occurrence of the character c in the string str, or NULL if the character is not found.
-    qs = strchr(uri, '?');
+      char * img_path = NULL;
+      memmove(uri, uri+5, strlen(uri));
+      asprintf(&img_path, "%s%s", directory_location, uri);
+     
+      fdimg = open(img_path, O_RDONLY);
+      sendfile(clients[n], fdimg, NULL, 6000);
+      close(fdimg);
 
-    // printf("%s\n", qs);
+      printf(" PATH %s \n", img_path); 
+      
+      write(clients[n], NULL, 0);  
+      close(fdimg);
 
-    if (qs) {
-      *qs++ = '\0'; // split URI
-    } else {
-      qs = uri - 1; // use an empty string
-    }
+      // DIFERENT
+      }else if(strcmp(uri,"/")){
 
-    header_t *h = reqhdr;
-    char *t, *t2;
-    while (h < reqhdr + 16) {
-      char *k, *v, *t;
+      char * img_path = NULL;
+      memmove(uri, uri+1, strlen(uri));
+      asprintf(&img_path, "%s%s", directory_location, uri);
+     
+      fdimg = open(img_path, O_RDONLY);
+      sendfile(clients[n], fdimg, NULL, 16000);
+      close(fdimg);
 
-      k = strtok(NULL, "\r\n: \t");
-      if (!k)
-        break;
+      }else{
 
-      v = strtok(NULL, "\r\n");
-      while (*v && *v == ' ')
-        v++;
+        
+      
+        // printf("METHOD: %s \n",method);
+        // printf("URI: %s \n",uri);
+        
 
-      h->name = k;
-      h->value = v;
-      h++;
-      fprintf(stderr, "[H] %s: %s\n", k, v);
-      t = v + 1 + strlen(v);
-      if (t[1] == '\r' && t[2] == '\n')
-        break;
-    }
+        // char *strchr(const char *str, int c)
+        // This returns a pointer to the first occurrence of the character c in the string str, or NULL if the character is not found.
+        qs = strchr(uri, '?');
 
-    t++; // now the *t shall be the beginning of user payload
-    t2 = request_header("Content-Length"); // and the related header if there is
-    payload = qs;
-    payload_size = t2 ? atol(t2) : (rcvd - (t - buf));
+        // printf("%s\n", qs);
 
-    // bind clientfd to stdout, making it easier to write
-    clientfd = clients[n];
-    dup2(clientfd, STDOUT_FILENO);
-    close(clientfd);
+        if (qs) {
+          *qs++ = '\0'; // split URI
+        } else {
+          qs = uri - 1; // use an empty string
+        }
 
-    // call router
-    route();
+        header_t *h = reqhdr;
+        char *t, *t2;
+        while (h < reqhdr + 16) {
+          char *k, *v, *t;
 
-    // tidy up
-    fflush(stdout);
-    shutdown(STDOUT_FILENO, SHUT_WR);
-    close(STDOUT_FILENO);
+          k = strtok(NULL, "\r\n: \t");
+          if (!k)
+            break;
 
+          v = strtok(NULL, "\r\n");
+          while (*v && *v == ' ')
+            v++;
+
+          h->name = k;
+          h->value = v;
+          h++;
+          fprintf(stderr, "[H] %s: %s\n", k, v);
+          t = v + 1 + strlen(v);
+          if (t[1] == '\r' && t[2] == '\n')
+            break;
+        }
+
+        body = strtok(NULL, "\r\n");
+
+
+        t++; // now the *t shall be the beginning of user payload
+        t2 = request_header("Content-Length"); // and the related header if there is
+        payload = qs;
+        payload_size = t2 ? atol(t2) : (rcvd - (t - buf));
+
+        // bind clientfd to stdout, making it easier to write
+        clientfd = clients[n];
+
+        write(clients[n], webpage, sizeof(webpage) - 1);  
+
+
+        dup2(clientfd, STDOUT_FILENO);
+        close(clientfd);
+
+        // call router
+        route();
+
+        // tidy up
+        fflush(stdout);
+        shutdown(STDOUT_FILENO, SHUT_WR);
+        close(STDOUT_FILENO);
+      
+      }
   }
 
   // Closing SOCKET
@@ -335,3 +385,5 @@ void respond(int n) {
 
   free(buf);
 }
+
+    
