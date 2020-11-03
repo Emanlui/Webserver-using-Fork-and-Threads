@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK\r\n
+Content-Type: text/html; charset=UTF-8\r\n\r\n
+<!DOCTYPE html>\r\n
+<html><head><title> Welcome to my server </title>\r\n
+<body><center><h1> This server was made with C </h1><br>\r\n
+<img src=\"dog.jpg\"></center></body></html>\r\n

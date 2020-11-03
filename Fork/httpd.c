@@ -12,7 +12,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
+struct stat st;
 static int listenfd;
 int *clients;
 static void error(char *);
@@ -280,32 +282,85 @@ void respond(int n) {
       print_protocol(method, uri);
 
       // EQUALS
-    if(!strcmp(uri,"/get/dog.jpg")){
+    if(!strncmp(uri,"/get/", 4)){
 
-      char * img_path = NULL;
-      memmove(uri, uri+5, strlen(uri));
-      asprintf(&img_path, "%s%s", directory_location, uri);
-     
-      fdimg = open(img_path, O_RDONLY);
-      sendfile(clients[n], fdimg, NULL, 6000);
-      close(fdimg);
+        char * image_name;
 
-      printf(" PATH %s \n", img_path); 
+        strtok(uri, "/");
+        image_name = strtok(NULL, "/");
+
+        char * img_path = NULL;
+        memmove(uri, uri+5, strlen(uri));
+        asprintf(&img_path, "%s%s", directory_location, image_name);
+       
+        printf(" PATH %s \n", img_path); 
+        printf(" IMAGE %d\n", fdimg);
+
+        fdimg = open(img_path, O_RDONLY);
+
+        stat(img_path, &st);
+        int size = st.st_size;
+
+        printf("%d\n", size);
+
+        sendfile(clients[n], fdimg, NULL, size);
+        close(fdimg);
+
+        
+        write(clients[n], NULL, 0);  
+        close(fdimg);
+
+    }else if(!strncmp(uri,"/command/", 9)){
       
-      write(clients[n], NULL, 0);  
-      close(fdimg);
+        char * command1;
+        char * command2;
 
-      // DIFERENT
-      }else if(strcmp(uri,"/")){
+        strtok(uri, "/");
+        char *tmp_command = strtok(NULL, "/");
 
-      char * img_path = NULL;
-      memmove(uri, uri+1, strlen(uri));
-      asprintf(&img_path, "%s%s", directory_location, uri);
-     
-      fdimg = open(img_path, O_RDONLY);
-      sendfile(clients[n], fdimg, NULL, 16000);
-      close(fdimg);
+        printf("URI %s\n", uri);
 
+        asprintf(&command1, "%s%s", "echo \"", tmp_command);
+        asprintf(&command2, "%s%s", command1, "\" | tr \"_\" \" \" | bash > command");
+
+        system(command2);
+        printf("COMMAND %s\n", command2);
+        system("cat command | tr \"_\" \" \" > command_temp && cat command_temp > command");
+        
+
+        FILE *command_file = fopen("command", "r");
+        char c;
+        char *command_data = "";
+
+        while ((c = fgetc(command_file) )!= EOF){
+              //printf ("%c", c);
+              asprintf(&command_data, "%s%c", command_data, c);
+        }
+
+        printf("COMMAND OUTPUT %s\n", command_data);
+
+        stat("command", &st);
+        int size = st.st_size;
+
+        write(clients[n], command_data, size);
+
+    // DIFERENT
+    }else if(strcmp(uri,"/")){
+
+          char * img_path = NULL;
+          memmove(uri, uri+1, strlen(uri));
+          asprintf(&img_path, "%s%s", directory_location, uri);
+         
+          fdimg = open(img_path, O_RDONLY);
+
+          stat(img_path, &st);
+          int size = st.st_size;
+
+          printf("%d\n", size);
+
+          sendfile(clients[n], fdimg, NULL, size);
+          close(fdimg);
+ 
       }else{
 
         
@@ -359,12 +414,32 @@ void respond(int n) {
         // bind clientfd to stdout, making it easier to write
         clientfd = clients[n];
 
-        write(clients[n], webpage, sizeof(webpage) - 1);  
+//        FILE *html_code;
 
+        //char *html_directory = NULL;
+        //asprintf(&html_directory, "%s%s", directory_location, "html/main");
+
+        //html_code = fopen(html_directory, "r");
+
+       
+        //char c;
+        //char * html_data = "";
+
+        //while ((c = fgetc(html_code) )!= EOF){
+        //      printf ("%c", c);
+        //      asprintf(&html_data, "%s%c", html_data, c);
+        //}
+
+        //printf("CODE %s\n", html_data);
+
+        //write(clients[n], html_data, 10000);  
+        write(clients[n], webpage, sizeof(webpage) - 1);  
+        //fclose(html_code);
 
         dup2(clientfd, STDOUT_FILENO);
         close(clientfd);
 
+        printf("-------\n");
         // call router
         route();
 
