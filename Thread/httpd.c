@@ -97,11 +97,9 @@ void serve_forever(const char *PORT, int max_connections) {
       perror("accept() error");
       exit(1);
     } else {
-      if (fork() == 0) {
+      
         pthread_create(&array_of_threads[slot], &attr, connect_to_server, &slot);
-        pthread_join(array_of_threads[slot], NULL);
-
-      } else close(clients[slot]);
+        pthread_join(array_of_threads[slot], NULL);      
       
     }
 

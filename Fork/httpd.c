@@ -92,8 +92,6 @@ void serve_forever(const char *PORT, int max_connections) {
         //fdimg = open("/home/kali/Desktop/progra/data/bird.jpg", O_RDONLY);
         //sendfile(clients[slot], fdimg, NULL, 4000);
 
-
-
         close(fdimg);
         close(clients[slot]);
         exit(0);
@@ -274,61 +272,60 @@ void respond(int n) {
 
     int fdimg = 0;
 
-      // char *strtok(char *str, const char *delim)
-      method = strtok(buf, " \t\r\n");
-      uri = strtok(NULL, " \t");
+    // char *strtok(char *str, const char *delim)
+    method = strtok(buf, " \t\r\n");
 
-      //printf("URI: %s \n", uri);
-      print_protocol(method, uri);
+    uri = strtok(NULL, " \t");
+    
+     
+    //printf("URI: %s \n", uri);
+    print_protocol(method, uri);
 
-      // EQUALS
-    if(!strncmp(uri,"/get/", 4)){
-
-        char * image_name;
-
-        strtok(uri, "/");
-        image_name = strtok(NULL, "/");
-
-        char * img_path = NULL;
-        memmove(uri, uri+5, strlen(uri));
-        asprintf(&img_path, "%s%s", directory_location, image_name);
-       
-        printf(" PATH %s \n", img_path); 
-        printf(" IMAGE %d\n", fdimg);
-
-        fdimg = open(img_path, O_RDONLY);
-
-        stat(img_path, &st);
-        int size = st.st_size;
-
-        printf("%d\n", size);
-
-        sendfile(clients[n], fdimg, NULL, size);
-        close(fdimg);
-
-        
-        write(clients[n], NULL, 0);  
-        close(fdimg);
-
-    }else if(!strncmp(uri,"/command/", 9)){
+    // EQUALS
+    if(!strncmp(uri,"/cgi-bin/", 8)){
       
-        char * command1;
-        char * command2;
 
-        strtok(uri, "/");
-        char *tmp_command = strtok(NULL, "/");
-
-        printf("URI %s\n", uri);
-
-        asprintf(&command1, "%s%s", "echo \"", tmp_command);
-        asprintf(&command2, "%s%s", command1, "\" | tr \"_\" \" \" | bash > command");
-
-        system(command2);
-        printf("COMMAND %s\n", command2);
-        system("cat command | tr \"_\" \" \" > command_temp && cat command_temp > command");
+        char * command = "";
+        //memmove(uri, uri+1, strlen(uri));
         
+        printf("URI %s\n", uri);
+        strtok(uri, "/");
+        char * program = strtok(NULL, "?");
+        char * all_sintax_parameters = strtok(NULL, "\n");
 
-        FILE *command_file = fopen("command", "r");
+        char* parameters_temp = "";
+        char* token = "";
+        token = strtok(all_sintax_parameters, "&");
+
+        while(token != NULL){
+          asprintf(&parameters_temp, "%s %s", parameters_temp, token);
+          token = strtok(NULL, "&");
+          //token = strtok(token, "=");
+        }
+        
+        char *parameters = "";
+        char* token2 = "";
+        token2 = strtok(parameters_temp, "=");
+
+        while(token2 != NULL){
+          token2 = strtok(NULL, " ");
+          asprintf(&parameters, "%s %s", parameters, token2);
+          token2 = strtok(NULL, "=");
+          //token = strtok(token, "=");
+        }
+
+        printf("PARAMETERS %s\n", parameters);
+        printf("PROGRAM %s\n", program);
+        printf("DIRECTORY %s\n", directory_location);
+        asprintf(&command, "%s%s%s%s%s%s", "cd ", directory_location, "cgi-bin/ && ./", program, parameters, " > command.txt");
+        
+        system(command);
+        printf("COMMAND %s\n", command);        
+
+        char* text_location = "";
+        asprintf(&text_location, "%s%s", directory_location, "cgi-bin/command.txt");
+
+        FILE *command_file = fopen(text_location, "r");
         char c;
         char *command_data = "";
 
@@ -339,7 +336,7 @@ void respond(int n) {
 
         printf("COMMAND OUTPUT %s\n", command_data);
 
-        stat("command", &st);
+        stat(text_location, &st);
         int size = st.st_size;
 
         write(clients[n], command_data, size);
@@ -358,7 +355,16 @@ void respond(int n) {
 
           printf("%d\n", size);
 
+
+          char image_header[] = "HTTP/1.1 200 OK\r\n"
+          "Content-Type: text/html; charset=UTF-8\r\n\r\n";
+
+
+
+          write(clients[n], image_header, sizeof(image_header) - 1);  
           sendfile(clients[n], fdimg, NULL, size);
+
+
           close(fdimg);
  
       }else{
@@ -439,7 +445,6 @@ void respond(int n) {
         dup2(clientfd, STDOUT_FILENO);
         close(clientfd);
 
-        printf("-------\n");
         // call router
         route();
 
