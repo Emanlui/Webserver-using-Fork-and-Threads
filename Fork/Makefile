@@ -1,11 +1,11 @@
-all: server
+all: preforked-webserver
 
 clean:
 	@rm -rf *.o
-	@rm -rf server
+	@rm -rf preforked-webserver
 
-server: main.o httpd.o
-	gcc -o server $^
+preforked-webserver: main.o httpd.o
+	gcc -o preforked-webserver $^
 
 main.o: main.c httpd.h
 	gcc -c -o main.o main.c

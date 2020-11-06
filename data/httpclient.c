@@ -11,20 +11,7 @@ int main(int argc, char **argv)
   // ./httpclient https://upload.wikimedia.org/wikipedia/commons/4/42/Tetrao_urogallus_Richard_Bartz.jpg photo.jpg
   // gcc -L/usr/lib/x86_64-linux-gnu httpclient.c -o httpclient -lcurl
 
-
-  //if (argc != 3) {    fprintf(stderr, "USAGE: ./httpclient <hostname> <port>\n"); return 1;  }  
- 
-  //char* url = argv[1];
-  //char* port = argv[2];
-  //printf(url);
-  //printf(port);
-
-  //char * complete_url = (char *) malloc(1 + strlen(url)+ strlen(port) );
-    //strcpy(complete_url, url);
-    //strcat(complete_url, port);
-    //printf("%s", complete_url);
-
-    // This variable is in charge of all operations
+  // This variable is in charge of all operations
   CURL *curl_handle;
 
   // File pointer
@@ -46,7 +33,6 @@ int main(int argc, char **argv)
 
     int result = curl_easy_perform(curl_handle);
    
-    printf("%d\n", result);
     if(result== CURLE_OK) printf("The file was succesfullly downloaded \n");
     else printf("Error downloading the file %s \n", curl_easy_strerror(result));
 
@@ -57,7 +43,6 @@ int main(int argc, char **argv)
     curl_easy_cleanup(curl_handle);
    
     
-
 
     return 0;
 }

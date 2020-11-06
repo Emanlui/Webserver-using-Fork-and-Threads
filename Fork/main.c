@@ -12,6 +12,7 @@ int main(int c, char **argv) {
     int connection = (int)atoi(argv[2]);
     directory_location = argv[4];
     input_protocol = argv[6];
+    
     serve_forever(argv[6], connection);
   }else{
     fprintf(stderr, "USAGE: ./server -n <threads> -w <directory> -p <port>\n");

@@ -34,7 +34,10 @@ char webpage[] =
   "<!DOCTYPE html>\r\n"
   "<html><head><title> Welcome to my server </title>\r\n"
   "<body><center><h1> This server was made with C </h1><br>\r\n"
-  "<img src=\"dog.jpg\"></center></body/</html>\r\n";
+  "<img src=\"dog.jpg\" width=\"200\" height=\"100\"><img src=\"rubik.jpg\" width=\"200\" height=\"100\">\r\n"
+  "<img src=\"bird.jpg\" width=\"200\" height=\"100\"></center>\r\n"
+  "<video width=\"320\" height=\"240\" controls><source src=\"video-8bit.mp4\" type=\"video/mp4\"></video>\r\n"
+  "</body/</html>\r\n";
 
 
 void serve_forever(const char *PORT, int max_connections) {
@@ -44,7 +47,6 @@ void serve_forever(const char *PORT, int max_connections) {
   socklen_t addrlen;
 
   int slot = 0;
-  int fdimg;
 
   printf("Server started %shttp://127.0.0.1:%s%s\n", "\033[92m", PORT,
          "\033[0m");
@@ -83,29 +85,24 @@ void serve_forever(const char *PORT, int max_connections) {
       if (fork() == 0) {
         close(listenfd);
         respond(slot);
-        //max_limit_of_clients++;
-        //printf("MAX LIMIT: %d\n", max_limit_of_clients);
-        
-        //max_limit_of_clients--;
-
-      
-        //fdimg = open("/home/kali/Desktop/progra/data/bird.jpg", O_RDONLY);
-        //sendfile(clients[slot], fdimg, NULL, 4000);
-
-        close(fdimg);
         close(clients[slot]);
         exit(0);
       } else close(clients[slot]);
       
     }
 
+    int counter = 0;
     while (clients[slot] != -1){
-      //printf("%d\n", slot);
+      counter++;
+      //printf("CLIENT %d\n", clients[slot]);
       slot = (slot + 1) % max_connections;
-      //printf("%d\n", slot);
-      //printf("MAX LIMIT: %d\n", max_limit_of_clients);
+      if(counter > max_connections){
+          printf("Error in the server, stopping...");
+          exit(1);
+      }
 
     }
+
 
   }
 
@@ -212,32 +209,40 @@ header_t *request_headers(void) { return reqhdr; }
 
 // This function is needed for my homework....
 // This function is needed for my homework....
-void print_protocol(char* method, char* uri ){
+int print_protocol(char* method, char* uri, int n ){
 
-  if(!strcmp(input_protocol,"8080") || !strcmp(input_protocol,"80")){
-    printf("It seems that you are using http \n");    
-    fprintf(stderr, "\x1b[32m + [%s] %s\x1b[0m\n", method, uri);
-  }else if(!strcmp(input_protocol,"21")){
+  if(!strcmp(input_protocol,"21")){
     printf("It seems that you are using ftp \n");    
-    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+    char * response = "SYN ACK";
+    write(clients[n], response, 7);
+    
+    //write(clients[n], "FTP is a standard network protocol used for the transfer of computer files between a client and server on a computer network.\n", 128);
+    printf("URI %s\n", uri);
+    return 1;
   }else if(!strcmp(input_protocol,"22")){
+    char * response = "ACK";
+    write(clients[n], response, 3);
     printf("It seems that you are using ssh \n");    
     fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+    return 1;
   }else if(!strcmp(input_protocol,"25") || !strcmp(input_protocol,"587") || !strcmp(input_protocol,"465")){
     printf("It seems that you are using smtp \n");    
-    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+    write(clients[n], "SMTP is a communication protocol for electronic mail transmission \n", 68);
+    return 1;
   } else if(!strcmp(input_protocol,"53")){
     printf("It seems that you are using dns \n");    
     fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+    return 1;
   } else if(!strcmp(input_protocol,"23")){
     printf("It seems that you are using telnet \n");    
-    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+    write(clients[n], "Telnet is an application protocol used on the Internet or local area network to provide a bidirectional interactive text-oriented communication facility using a virtual terminal connection.\n", 192);
+    return 1;
   } else if(!strcmp(input_protocol,"123")){
-    printf("It seems that you are using sntp \n");    
-    fprintf(stderr, "\x1b[32m + [%s] \x1b[0m\n", method);
+    printf("It seems that you are using snmp \n");    
+    write(clients[n], "SNMP is an Internet Standard protocol for collecting and organizing information about managed devices on IP networks and for modifying that information to change device behavior.\n", 180);
+    return 1;
   }
-
-  else printf("Unrecognized port: %s \n", input_protocol);
+  else return 0;
 
 }
 
@@ -269,18 +274,12 @@ void respond(int n) {
   {
 
     buf[rcvd] = '\0';
-
-    int fdimg = 0;
-
+    
     // char *strtok(char *str, const char *delim)
     method = strtok(buf, " \t\r\n");
 
     uri = strtok(NULL, " \t");
     
-     
-    //printf("URI: %s \n", uri);
-    print_protocol(method, uri);
-
     // EQUALS
     if(!strncmp(uri,"/cgi-bin/", 8)){
       
@@ -288,7 +287,7 @@ void respond(int n) {
         char * command = "";
         //memmove(uri, uri+1, strlen(uri));
         
-        printf("URI %s\n", uri);
+        //printf("URI %s\n", uri);
         strtok(uri, "/");
         char * program = strtok(NULL, "?");
         char * all_sintax_parameters = strtok(NULL, "\n");
@@ -314,13 +313,13 @@ void respond(int n) {
           //token = strtok(token, "=");
         }
 
-        printf("PARAMETERS %s\n", parameters);
-        printf("PROGRAM %s\n", program);
-        printf("DIRECTORY %s\n", directory_location);
+        //printf("PARAMETERS %s\n", parameters);
+        //printf("PROGRAM %s\n", program);
+        //printf("DIRECTORY %s\n", directory_location);
         asprintf(&command, "%s%s%s%s%s%s", "cd ", directory_location, "cgi-bin/ && ./", program, parameters, " > command.txt");
         
         system(command);
-        printf("COMMAND %s\n", command);        
+        //printf("COMMAND %s\n", command);        
 
         char* text_location = "";
         asprintf(&text_location, "%s%s", directory_location, "cgi-bin/command.txt");
@@ -334,45 +333,52 @@ void respond(int n) {
               asprintf(&command_data, "%s%c", command_data, c);
         }
 
-        printf("COMMAND OUTPUT %s\n", command_data);
-
         stat(text_location, &st);
         int size = st.st_size;
 
         write(clients[n], command_data, size);
 
     // DIFERENT
+    }else if(!strncmp(uri,"/get/", 5)){
+
+          strtok(uri, "/");
+          uri = strtok(NULL, "/");
+          char * img_path = NULL;
+          memmove(uri, uri, strlen(uri));
+          asprintf(&img_path, "%s%s", directory_location, uri);
+         
+          int file_to_open = open(img_path, O_RDONLY);
+
+          stat(img_path, &st);
+          int size = st.st_size;
+            
+          char image_header[] = "HTTP/1.1 200 OK\r\n"
+          "Content-Type: text/html; charset=UTF-8\r\n\r\n";
+          write(clients[n], image_header, sizeof(image_header) - 1); 
+
+          sendfile(clients[n], file_to_open, NULL, size);
+          close(file_to_open);
+
+ 
+
     }else if(strcmp(uri,"/")){
 
           char * img_path = NULL;
           memmove(uri, uri+1, strlen(uri));
           asprintf(&img_path, "%s%s", directory_location, uri);
          
-          fdimg = open(img_path, O_RDONLY);
+          int file_to_open = open(img_path, O_RDONLY);
 
           stat(img_path, &st);
           int size = st.st_size;
 
-          printf("%d\n", size);
-
-
-          char image_header[] = "HTTP/1.1 200 OK\r\n"
-          "Content-Type: text/html; charset=UTF-8\r\n\r\n";
-
-
-
-          write(clients[n], image_header, sizeof(image_header) - 1);  
-          sendfile(clients[n], fdimg, NULL, size);
-
-
-          close(fdimg);
+          if(!print_protocol(method, uri, n)){
+            sendfile(clients[n], file_to_open, NULL, size);
+            close(file_to_open);
+          }
  
       }else{
 
-        
-      
-        // printf("METHOD: %s \n",method);
-        // printf("URI: %s \n",uri);
         
 
         // char *strchr(const char *str, int c)
@@ -439,10 +445,14 @@ void respond(int n) {
         //printf("CODE %s\n", html_data);
 
         //write(clients[n], html_data, 10000);  
+        //printf("URI: %s \n", uri);
+
         write(clients[n], webpage, sizeof(webpage) - 1);  
+
+
         //fclose(html_code);
 
-        dup2(clientfd, STDOUT_FILENO);
+        //dup2(clientfd, STDOUT_FILENO);
         close(clientfd);
 
         // call router
