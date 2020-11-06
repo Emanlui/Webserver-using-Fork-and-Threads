@@ -14,9 +14,15 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+// This is use fot the size of the file to open
 struct stat st;
+
+// This is the file descriptor for the connections
 static int listenfd;
+
+// This is the list of clients
 int *clients;
+
 static void error(char *);
 static void start_server(const char *);
 static void respond(int);
@@ -27,6 +33,7 @@ static int clientfd;
 
 static char *buf;
 
+// This is the web page
 char webpage[] =
 
   "HTTP/1.1 200 OK\r\n"
@@ -97,7 +104,7 @@ void serve_forever(const char *PORT, int max_connections) {
       //printf("CLIENT %d\n", clients[slot]);
       slot = (slot + 1) % max_connections;
       if(counter > max_connections){
-          printf("Error in the server, stopping...");
+          printf("Error in the server, DOS detected, stopping server...");
           exit(1);
       }
 
@@ -207,16 +214,13 @@ char *request_header(const char *name) {
 header_t *request_headers(void) { return reqhdr; }
 
 
-// This function is needed for my homework....
-// This function is needed for my homework....
+// This function is needed for my homework...
 int print_protocol(char* method, char* uri, int n ){
 
   if(!strcmp(input_protocol,"21")){
     printf("It seems that you are using ftp \n");    
     char * response = "SYN ACK";
     write(clients[n], response, 7);
-    
-    //write(clients[n], "FTP is a standard network protocol used for the transfer of computer files between a client and server on a computer network.\n", 128);
     printf("URI %s\n", uri);
     return 1;
   }else if(!strcmp(input_protocol,"22")){
@@ -247,7 +251,7 @@ int print_protocol(char* method, char* uri, int n ){
 }
 
 
-// client connection
+// This function do the request to the client
 void respond(int n) {
   int rcvd, fd, bytes_read;
   char *ptr;
@@ -274,7 +278,7 @@ void respond(int n) {
   {
 
     buf[rcvd] = '\0';
-    
+
     // char *strtok(char *str, const char *delim)
     method = strtok(buf, " \t\r\n");
 
@@ -284,10 +288,7 @@ void respond(int n) {
     if(!strncmp(uri,"/cgi-bin/", 8)){
       
 
-        char * command = "";
-        //memmove(uri, uri+1, strlen(uri));
-        
-        //printf("URI %s\n", uri);
+        char * command = ""; 
         strtok(uri, "/");
         char * program = strtok(NULL, "?");
         char * all_sintax_parameters = strtok(NULL, "\n");
@@ -298,8 +299,7 @@ void respond(int n) {
 
         while(token != NULL){
           asprintf(&parameters_temp, "%s %s", parameters_temp, token);
-          token = strtok(NULL, "&");
-          //token = strtok(token, "=");
+          token = strtok(NULL, "&"); 
         }
         
         char *parameters = "";
@@ -309,17 +309,16 @@ void respond(int n) {
         while(token2 != NULL){
           token2 = strtok(NULL, " ");
           asprintf(&parameters, "%s %s", parameters, token2);
-          token2 = strtok(NULL, "=");
-          //token = strtok(token, "=");
+          token2 = strtok(NULL, "="); 
         }
 
         //printf("PARAMETERS %s\n", parameters);
         //printf("PROGRAM %s\n", program);
         //printf("DIRECTORY %s\n", directory_location);
+        // I save the output at command.txt, and then read it
         asprintf(&command, "%s%s%s%s%s%s", "cd ", directory_location, "cgi-bin/ && ./", program, parameters, " > command.txt");
         
-        system(command);
-        //printf("COMMAND %s\n", command);        
+        system(command);       
 
         char* text_location = "";
         asprintf(&text_location, "%s%s", directory_location, "cgi-bin/command.txt");
@@ -328,8 +327,7 @@ void respond(int n) {
         char c;
         char *command_data = "";
 
-        while ((c = fgetc(command_file) )!= EOF){
-              //printf ("%c", c);
+        while ((c = fgetc(command_file) )!= EOF){ 
               asprintf(&command_data, "%s%c", command_data, c);
         }
 
@@ -338,7 +336,7 @@ void respond(int n) {
 
         write(clients[n], command_data, size);
 
-    // DIFERENT
+    // DIFERENT, this gets a resource to download, opens the image and then 
     }else if(!strncmp(uri,"/get/", 5)){
 
           strtok(uri, "/");
@@ -418,41 +416,16 @@ void respond(int n) {
         body = strtok(NULL, "\r\n");
 
 
-        t++; // now the *t shall be the beginning of user payload
-        t2 = request_header("Content-Length"); // and the related header if there is
+        t++;                                    // now the *t shall be the beginning of user payload
+        t2 = request_header("Content-Length");  // and the related header if there is
         payload = qs;
         payload_size = t2 ? atol(t2) : (rcvd - (t - buf));
 
         // bind clientfd to stdout, making it easier to write
         clientfd = clients[n];
 
-//        FILE *html_code;
-
-        //char *html_directory = NULL;
-        //asprintf(&html_directory, "%s%s", directory_location, "html/main");
-
-        //html_code = fopen(html_directory, "r");
-
-       
-        //char c;
-        //char * html_data = "";
-
-        //while ((c = fgetc(html_code) )!= EOF){
-        //      printf ("%c", c);
-        //      asprintf(&html_data, "%s%c", html_data, c);
-        //}
-
-        //printf("CODE %s\n", html_data);
-
-        //write(clients[n], html_data, 10000);  
-        //printf("URI: %s \n", uri);
-
         write(clients[n], webpage, sizeof(webpage) - 1);  
 
-
-        //fclose(html_code);
-
-        //dup2(clientfd, STDOUT_FILENO);
         close(clientfd);
 
         // call router

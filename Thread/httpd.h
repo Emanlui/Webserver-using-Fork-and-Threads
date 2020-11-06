@@ -5,11 +5,9 @@
 #include <string.h>
 
 // Server control functions
-
 void serve_forever(const char *PORT, int CONECTIONS);
 
 // Client request
-
 char *method, // "GET" or "POST" or ...
     *uri,     // "/index.html" things before '?'
     *qs,      // "a=1&b=2"     things after  '?'
@@ -32,10 +30,7 @@ typedef struct {
 static header_t reqhdr[17] = {{"\0", "\0"}};
 header_t *request_headers(void);
 
-//void display_img(char* img);
-
 // user shall implement this function
-
 void route();
 
 // some interesting macro for `route()`

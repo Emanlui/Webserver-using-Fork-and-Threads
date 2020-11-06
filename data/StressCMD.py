@@ -3,10 +3,8 @@ import sys
 import os
 
 # python3 StressCMD.py -n 5000 httpclient http://localhost/
-
 def thread_function(input_host):
 	command = "./httpclient " + input_host
-	#print(command)
 	os.system(command)
 	
 

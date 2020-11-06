@@ -49,23 +49,26 @@ char webpage[] =
   "<video width=\"320\" height=\"240\" controls><source src=\"video-8bit.mp4\" type=\"video/mp4\"></video>\r\n"
   "</body/</html>\r\n";
 
+// Variable needed to lock the threads
 pthread_mutex_t lock; 
 
+// This function is needed for the thread 
 void *thread_function(int* client_socket){
         
+        // Add 1 to the connection
         connections_clients++;
         pthread_mutex_lock(&lock); 
         int n = *client_socket;
         free(client_socket);
         respond(n);
         pthread_mutex_unlock(&lock); 
+        // Extract 1 from the actual connections
         connections_clients--;
         pthread_exit(NULL);
 }
 
-// client connection
+// This function do the request to the client
 void respond(int client) {
-
 
   int rcvd, fd, bytes_read;
   char *ptr;
@@ -81,7 +84,6 @@ void respond(int client) {
        describes the differences between the calls.
        Return a ssize_t 
   */
-
   rcvd = recv(client, buf, buf_size, 0);
 
   if (rcvd < 0) // receive error
@@ -93,21 +95,15 @@ void respond(int client) {
 
     buf[rcvd] = '\0';
 
-    
-
     // char *strtok(char *str, const char *delim)
     method = strtok(buf, " \t\r\n");
 
     uri = strtok(NULL, " \t");
     
-    // EQUALS
+    // EQUALS, if the user is in the cgi-bin
     if(!strncmp(uri,"/cgi-bin/", 8)){
-      
 
         char * command = "";
-        //memmove(uri, uri+1, strlen(uri));
-        
-        //printf("URI %s\n", uri);
         strtok(uri, "/");
         char * program = strtok(NULL, "?");
         char * all_sintax_parameters = strtok(NULL, "\n");
@@ -119,7 +115,6 @@ void respond(int client) {
         while(token != NULL){
           asprintf(&parameters_temp, "%s %s", parameters_temp, token);
           token = strtok(NULL, "&");
-          //token = strtok(token, "=");
         }
         
         char *parameters = "";
@@ -130,16 +125,10 @@ void respond(int client) {
           token2 = strtok(NULL, " ");
           asprintf(&parameters, "%s %s", parameters, token2);
           token2 = strtok(NULL, "=");
-          //token = strtok(token, "=");
         }
 
-        //printf("PARAMETERS %s\n", parameters);
-        //printf("PROGRAM %s\n", program);
-        //printf("DIRECTORY %s\n", directory_location);
         asprintf(&command, "%s%s%s%s%s%s", "cd ", directory_location, "cgi-bin/ && ./", program, parameters, " > command.txt");
-        
-        system(command);
-        //printf("COMMAND %s\n", command);        
+        system(command);       
 
         char* text_location = "";
         asprintf(&text_location, "%s%s", directory_location, "cgi-bin/command.txt");
@@ -148,17 +137,16 @@ void respond(int client) {
         char c;
         char *command_data = "";
 
-        while ((c = fgetc(command_file) )!= EOF){
-              //printf ("%c", c);
+        while ((c = fgetc(command_file) )!= EOF)
               asprintf(&command_data, "%s%c", command_data, c);
-        }
+        
 
         stat(text_location, &st);
         int size = st.st_size;
 
         write(client, command_data, size);
 
-    // DIFERENT
+    // DIFERENT, this gets a resource to download, opens the image and then 
     }else if(!strncmp(uri,"/get/", 5)){
 
           strtok(uri, "/");
@@ -178,8 +166,6 @@ void respond(int client) {
 
           sendfile(client, file_to_open, NULL, size);
           close(file_to_open);
-
- 
 
     }else if(strcmp(uri,"/")){
 
@@ -204,8 +190,6 @@ void respond(int client) {
         // char *strchr(const char *str, int c)
         // This returns a pointer to the first occurrence of the character c in the string str, or NULL if the character is not found.
         qs = strchr(uri, '?');
-
-        // printf("%s\n", qs);
 
         if (qs) {
           *qs++ = '\0'; // split URI
@@ -238,47 +222,23 @@ void respond(int client) {
         body = strtok(NULL, "\r\n");
 
 
-        t++; // now the *t shall be the beginning of user payload
-        t2 = request_header("Content-Length"); // and the related header if there is
+        t++;                                    // now the *t shall be the beginning of user payload
+        t2 = request_header("Content-Length");  // and the related header if there is
         payload = qs;
         payload_size = t2 ? atol(t2) : (rcvd - (t - buf));
 
         // bind clientfd to stdout, making it easier to write
         clientfd = client;
 
-//        FILE *html_code;
-
-        //char *html_directory = NULL;
-        //asprintf(&html_directory, "%s%s", directory_location, "html/main");
-
-        //html_code = fopen(html_directory, "r");
-
-       
-        //char c;
-        //char * html_data = "";
-
-        //while ((c = fgetc(html_code) )!= EOF){
-        //      printf ("%c", c);
-        //      asprintf(&html_data, "%s%c", html_data, c);
-        //}
-
-        //printf("CODE %s\n", html_data);
-
-        //write(clients[n], html_data, 10000);  
-        //printf("URI: %s \n", uri);
-
         write(clientfd, webpage, sizeof(webpage) - 1);  
-        //fclose(html_code);
-
-        //dup2(clientfd, STDOUT_FILENO);
+      
         close(clientfd);
         // call router
         route();
         // tidy up
         fflush(stdout);
         shutdown(STDOUT_FILENO, SHUT_WR);
-        //close(STDOUT_FILENO);
-
+       
       }
   }
 
@@ -392,15 +352,12 @@ header_t *request_headers(void) { return reqhdr; }
 
 
 // This function is needed for my homework....
-// This function is needed for my homework....
 int print_protocol(char* method, char* uri, int n ){
 
   if(!strcmp(input_protocol,"21")){
     printf("It seems that you are using ftp \n");    
     char * response = "SYN ACK";
     write(n, response, 7);
-    
-    //write(clients[n], "FTP is a standard network protocol used for the transfer of computer files between a client and server on a computer network.\n", 128);
     printf("URI %s\n", uri);
     return 1;
   }else if(!strcmp(input_protocol,"22")){
@@ -488,16 +445,16 @@ void serve_forever(const char *PORT, int max_connections) {
         int error = pthread_create(&array_of_threads[slot], NULL, thread_function, pclient_socket);
         if(error) printf("ERROR creating thread \n");
 
-
+        // we wait for a little 
         sleep(1/100);
         pthread_detach(array_of_threads[slot]); 
      }
 
     clients[slot] = -1;
-    while (clients[slot] != -1){
-      //printf("CLIENT %d\n", clients[slot]);
+    while (clients[slot] != -1)
       slot = (slot + 1) % max_connections;
-    }
+    
+    // We print the connection status of the server
     printf("How many clients are in the system? %d\n", connections_clients);
     printf("The max limit of connections are: %d\n", max_connections);
     if(connections_clients > max_connections) {
