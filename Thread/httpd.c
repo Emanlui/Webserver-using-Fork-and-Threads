@@ -43,10 +43,14 @@ char webpage[] =
   "Content-Type: text/html; charset=UTF-8\r\n\r\n"
   "<!DOCTYPE html>\r\n"
   "<html><head><title> Welcome to my server </title>\r\n"
-  "<body><center><h1> This server was made with C </h1><br>\r\n"
-  "<img src=\"dog.jpg\" width=\"200\" height=\"100\"><img src=\"rubik.jpg\" width=\"200\" height=\"100\">\r\n"
-  "<img src=\"bird.jpg\" width=\"200\" height=\"100\"></center>\r\n"
-  "<video width=\"320\" height=\"240\" controls><source src=\"video-8bit.mp4\" type=\"video/mp4\"></video>\r\n"
+  "<body style=\"background-color: #92a8d1;\"><center><h1> This server was made with C </h1><br><h2>Images</h2><br>\r\n"
+  "<div><img src=\"dog.jpg\" width=\"400\" height=\"300\"><img src=\"rubik.jpg\" width=\"400\" height=\"300\">\r\n"
+  "<img src=\"bird.jpg\" width=\"400\" height=\"300\"></div><br><h2>Videos</h2><br><div>\r\n"
+  "<video width=\"780\" height=\"420\" controls><source src=\"video-8bit.mp4\" type=\"video/mp4\"></video>\r\n"
+  "<video width=\"780\" height=\"420\" controls><source src=\"video-8bit.1.mp4\" type=\"video/mp4\"></video></div>\r\n"
+  "<div><video width=\"780\" height=\"420\" controls><source src=\"video2.mp4\" type=\"video/mp4\"></video>\r\n"
+  "<video width=\"780\" height=\"420\" controls><source src=\"video3.mp4\" type=\"video/mp4\"></video></div>\r\n"
+  "<div><video width=\"780\" height=\"420\" controls><source src=\"video4.mp4\" type=\"video/mp4\"></video></div></center>\r\n"
   "</body/</html>\r\n";
 
 // Variable needed to lock the threads
